@@ -10,7 +10,7 @@ namespace GitHub.Domain.AutoMapper
     {
         public CommandToDomainMappingProfile()
         {
-            CreateMap<InsertSampleCommand, Sample>();
+            CreateMap<InsertSampleCommand, Repository>();
         }
     }
 }

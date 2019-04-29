@@ -9,7 +9,6 @@ using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.AspNetCore.SpaServices.Webpack;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using GitHub.Application.Secuity;
 using GitHub.Domain.AutoMapper;
 using GitHub.IoC;
 using Newtonsoft.Json;
@@ -20,8 +19,6 @@ using Swashbuckle.AspNetCore.Swagger;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using GitHub.CrossCutting.Utils;
-using GitHub.Domain.Models.Identity;
 using Microsoft.AspNetCore.Identity;
 
 namespace GitHub.Application
@@ -48,50 +45,15 @@ namespace GitHub.Application
         public void ConfigureServices(IServiceCollection services)
         {
             ConnectionStrings.GitHubConnection = Configuration.GetConnectionString("GitHubConnection");
-            string Issuer = Configuration.GetSection("TokenConfigurations")["Issuer"];
-            string Audience = Configuration.GetSection("TokenConfigurations")["Audience"];
-            string Password = Configuration.GetSection("TokenConfigurations")["Password"];
-            Environment.SetEnvironmentVariable("Issuer", Issuer);
-            Environment.SetEnvironmentVariable("Audience", Audience);
-            Environment.SetEnvironmentVariable("Password", Password);
-
-            //Configure JTW token to work with Autorize
-            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-            .AddJwtBearer(options =>
-            {
-                options.TokenValidationParameters = new TokenValidationParameters
-                {
-                    ValidateIssuer = true,
-                    ValidateAudience = true,
-                    ValidateLifetime = true,
-                    ValidateIssuerSigningKey = true,
-                    ValidIssuer = Issuer,
-                    ValidAudience = Audience,
-                    IssuerSigningKey = new SymmetricSecurityKey(
-                        Encoding.UTF8.GetBytes(new Sha512(Password).ToString())) //Sign the JTW with a SHA512 hash of Password
-                };
-            });
-
-            //services.AddIdentity<ApiUser, IdentityRole>()
-            //         .AddDefaultTokenProviders();
-
-            services.AddMvc(config =>
-            {
-                //var policy = new AuthorizationPolicyBuilder()
-                //                 .RequireAuthenticatedUser()
-                //                 .Build();
-                //config.Filters.Add(new AuthorizeFilter(policy));
-            })
+            string GitHubUrl = Configuration.GetSection("ApiUrls")["GitHub"];
+            Environment.SetEnvironmentVariable("GitHubUrl", GitHubUrl);
+      
+            services.AddMvc()
             .AddJsonOptions(options =>
             {
                 options.SerializerSettings.Formatting = Formatting.Indented;
             });
-
-            services.AddAuthorization(options =>
-            {
-                options.UseAuthorizationOptions();
-            });
-
+            
             Mapper.Initialize(cfg =>
             {
                 cfg.ValidateInlineMaps = false;
@@ -113,9 +75,10 @@ namespace GitHub.Application
 
             services.AddCors(o => o.AddPolicy("Cors", builder =>
             {
-                builder.AllowAnyOrigin()
+                builder
                 .AllowAnyMethod()
-                .AllowAnyHeader();
+                .AllowAnyHeader()
+                .AllowAnyOrigin();
             }));
             // Registrar todos os IoC
             RegisterServices(services);
@@ -127,11 +90,6 @@ namespace GitHub.Application
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
-                app.UseWebpackDevMiddleware(new WebpackDevMiddlewareOptions
-                {
-                    HotModuleReplacement = true,
-                    ReactHotModuleReplacement = true
-                });
             }
             else
             {
@@ -151,18 +109,15 @@ namespace GitHub.Application
                 c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
                 
             });
-
             app.UseMvc(routes =>
             {
                 routes.MapRoute(
                     name: "default",
-                    template: "{controller=Home}/{action=Index}/{id?}");
-
-                routes.MapSpaFallbackRoute(
-                    name: "spa-fallback",
-                    defaults: new { controller = "Home", action = "Index" });
+                    template: "{controller}/{action}/{id?}");
             });
-
+            app.UseCors(builder => {
+                builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
+            });
 
         }
 

@@ -8,7 +8,13 @@ namespace GitHub.Domain.AutoMapper
     {
         public DomainToViewModelMappingProfile()
         {
-            CreateMap<Sample, SampleViewModel>();
+            CreateMap<Repository, RepositoryViewModel>();
+            CreateMap<Owner, OwnerViewModel>();
+            CreateMap<Repository, RepositoryResumeViewModel>()
+                .ForMember(dest => dest.OwnerId, opt => opt.MapFrom(x => x.Owner.Id))
+                .ForMember(dest => dest.AvatarUrl, opt => opt.MapFrom(x => x.Owner.AvatarUrl))
+                .ForMember(dest => dest.OwnerHtmlUrl, opt => opt.MapFrom(x => x.Owner.HtmlUrl))
+                .ForMember(dest => dest.ReposUrl, opt => opt.MapFrom(x => x.Owner.Url));
         }
     }
 }
