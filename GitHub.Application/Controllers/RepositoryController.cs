@@ -25,10 +25,11 @@ namespace GitHub.Application.Controllers
 
         public RepositoryController(IRepositoryService repositoryService) => _repositoryService = repositoryService;
 
+        [TestAutmated("c#",19)]
         [AllowAnonymous, HttpGet("ListTop")]
         public async Task<IActionResult> ListTop(string language, int qtd) => Response(await _repositoryService.ListTop(language,qtd));
 
-        //[TestAutmated(1)]
+        [TestAutmated(7600409)]
         [AllowAnonymous, HttpGet("{id}")]
         public async Task<IActionResult> Get(int id) => Response(await _repositoryService.Get(id)); //All Exception are manipulated on ResponseExceptionHandler, no nedeed add try/catch on controller.
     }
